@@ -1,0 +1,25 @@
+version: '3.9'
+services:
+  profile_api:
+    build: 
+      context: ./services/api/
+      dockerfile: Dockerfile
+    image: profile_api:v1
+    restart: always
+    env_file:
+      - ./env/.env
+    expose:
+      - 5000
+    command: gunicorn --bind 0.0.0.0:5000 main:app
+    
+
+  nginx:
+    build: ./services/proxy/
+    ports:
+      - 1339:80
+    depends_on:
+      - profile_api
+
+
+    
+
