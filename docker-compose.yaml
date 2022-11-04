@@ -16,7 +16,7 @@ services:
   nginx:
     build: ./services/proxy/
     ports:
-      - 1339:80
+      - 80:80
     depends_on:
       - profile_api
 

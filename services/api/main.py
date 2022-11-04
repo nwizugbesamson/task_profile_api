@@ -1,10 +1,12 @@
 import pathlib
 import dotenv
-from flask import Flask, jsonify
+from http import HTTPStatus
+from flask import Flask, request
 from flask.cli import FlaskGroup
 from flask_cors import CORS 
 from flask_restx import Api, Resource, fields
 from decouple import config
+from calculator import process_operation
 
 
 ## load environment variables
@@ -40,7 +42,7 @@ api = Api(
 
 
 
-## response model
+## models
 profile_model = api.model(
     "Profile", {
         "slackUsername": fields.String(required=True, description="username"),
@@ -50,7 +52,32 @@ profile_model = api.model(
         }
 )
 
+operation_payload = api.model(
+    "Operation_payload", {
+        "operation_type": fields.String(
+            required=True,
+            description="specified operator. Enum<addition | subtraction | multiplication>"
+        ),
+        "x": fields.Integer(required=False, description="first operand"),
+        "y": fields.Integer(required=False, description="second operand"),
+    }
+)
 
+
+operation_response = api.model(
+    "Operation_response", {
+        "slackUsername": fields.String(
+            required=True,
+            description="author identification"
+        ),
+        "result": fields.Integer(
+            description="operation result"
+        ),
+        "operation_type": fields.String(
+            description="input operator"
+        )
+    }
+)
 
 
 @api.route("/profile")
@@ -70,6 +97,29 @@ class Profile(Resource):
         }
         
         
+@api.route("/calculator")
+@api.doc(responses={
+    HTTPStatus.OK: 'operation result',
+    HTTPStatus.BAD_REQUEST: "provide valid input operands",
+    HTTPStatus.BAD_REQUEST: "failed to calculate result",
+},
+params={
+    "operation_type": "Enum<addition | subtraction | multiplication>",
+    "x": "first operand",
+    "y": "second operand"
+})
+class Calculator(Resource):
+    """Return result of input operands and operator"""
+
+    @api.expect(operation_payload)
+    @api.marshal_with(operation_response)
+    def post(self):
+        """return result of simple calculation model
+        """
+        
+        data = request.get_json()
+        print(f'DATA IS: {data}')
+        return process_operation(data)
 
 
 cli = FlaskGroup(app)
